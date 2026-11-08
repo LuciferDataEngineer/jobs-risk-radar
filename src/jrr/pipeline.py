@@ -25,8 +25,8 @@ def main() -> None:
     result = run()
     headlines = result["headlines"]
     print(
-        f"RADAR_OK regions={headlines['regions']} flagged={headlines['flagged']} "
-        f"top={headlines['top_region']}"
+        f"RADAR_OK regions={headlines['regions']} rising={headlines['rising']} "
+        f"top={headlines['rising_name']}"
     )
 
 
