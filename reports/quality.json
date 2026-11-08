@@ -1,0 +1,47 @@
+{
+  "checks": [
+    {
+      "name": "one row per region-month",
+      "passed": true
+    },
+    {
+      "name": "87 regions",
+      "passed": true
+    },
+    {
+      "name": "rates in a plausible range",
+      "passed": true
+    },
+    {
+      "name": "no missing unemployment rates",
+      "passed": true
+    },
+    {
+      "name": "September 2026 employment matches the ABS total",
+      "passed": true
+    },
+    {
+      "name": "September 2026 national rate is 4.7 percent",
+      "passed": true
+    },
+    {
+      "name": "November 2026 cash rate target is 4.85",
+      "passed": true
+    },
+    {
+      "name": "September 2026 dwelling approvals are populated",
+      "passed": true
+    },
+    {
+      "name": "vacancies cover the states and Australia",
+      "passed": true
+    }
+  ],
+  "sa4_rows": 15399,
+  "regions": 87,
+  "september_2026_employed_thousands": 14743.820256863004,
+  "september_2026_national_unemployment_rate": 4.71834873,
+  "september_2026_region_rate_min": 2.550712849655608,
+  "september_2026_region_rate_median": 4.295369569579003,
+  "september_2026_region_rate_max": 6.760271907957198
+}

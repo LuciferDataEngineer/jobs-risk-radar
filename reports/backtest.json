@@ -1,0 +1,21 @@
+{
+  "backtest": {
+    "origins": 26,
+    "rows": 2262,
+    "mae_model": 0.49652458596175614,
+    "mae_usual_pace": 0.6035163295661586,
+    "mae_last_quarter_repeated": 0.7240460561048944,
+    "mean_rank_agreement": 0.3233234168781517,
+    "top10_hit_rate": 0.29615384615384616,
+    "material_rise_share": 0.23651635720601238,
+    "call_accuracy": 0.737842617152962,
+    "majority_accuracy": 0.7634836427939876
+  },
+  "train_rows": 14094,
+  "cash_adjustment": {
+    "cash_rate": 4.85,
+    "cash_delta_3": 0.5,
+    "cash_month": "2026-11-01"
+  },
+  "scored_at": "2026-11-08T22:37:01Z"
+}

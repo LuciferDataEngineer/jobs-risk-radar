@@ -1,0 +1,7 @@
+jrr:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('JRR_DUCKDB') }}"
+      threads: 1

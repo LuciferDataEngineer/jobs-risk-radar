@@ -1,0 +1,25 @@
+name: Kind
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the scoring image
+        run: docker build -t jobs-risk-radar:local .
+      - name: Start a kind cluster
+        uses: helm/kind-action@v1.12.0
+        with:
+          cluster_name: jobs-risk-radar
+      - name: Run the score as a Kubernetes Job
+        run: |
+          kind load docker-image jobs-risk-radar:local --name jobs-risk-radar
+          kubectl apply -f infra/k8s/radar-job.yaml
+          kubectl wait --for=condition=complete job/radar-score --timeout=300s
+          kubectl logs job/radar-score | tee /tmp/radar.log
+          grep -q RADAR_OK /tmp/radar.log

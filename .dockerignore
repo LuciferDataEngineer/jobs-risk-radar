@@ -1,0 +1,15 @@
+.venv
+.git
+mlruns
+data/raw
+data/warehouse
+data/feast
+data/features
+data/boundaries
+**/__pycache__
+dbt_project/target
+dbt_project/logs
+site
+reports
+tests
+**/*.egg-info
