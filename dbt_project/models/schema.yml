@@ -1,0 +1,31 @@
+version: 2
+models:
+  - name: stg_sa4_labour
+    description: One row per labour-market region and month, rolled up from the ABS age and sex cube.
+    columns:
+      - name: sa4_code
+        data_tests: [not_null]
+      - name: month
+        data_tests: [not_null]
+      - name: unemp_rate
+        data_tests: [not_null]
+  - name: stg_state_unemployment
+    columns:
+      - name: region_code
+        data_tests: [not_null]
+      - name: unemp_rate_sa
+        data_tests: [not_null]
+  - name: stg_cash_rate
+    columns:
+      - name: cash_rate_target
+        data_tests: [not_null]
+  - name: mart_region_latest
+    description: Latest modelled unemployment rate and the change over the previous three months.
+    columns:
+      - name: sa4_code
+        data_tests: [unique, not_null]
+  - name: mart_state_latest
+    description: Latest official seasonally adjusted unemployment rate by state, plus Australia.
+    columns:
+      - name: region_code
+        data_tests: [unique, not_null]

@@ -1,0 +1,41 @@
+{
+  "regions": 87,
+  "rising": 1,
+  "rising_name": "Darwin",
+  "rising_state": "Northern Territory",
+  "rising_rate": 3.0023052082147794,
+  "rising_change": 0.15075072968898612,
+  "already": 23,
+  "already_people": 4002274,
+  "sharp_name": "Sydney - Parramatta",
+  "sharp_state": "New South Wales",
+  "sharp_now": 6.717825645967045,
+  "sharp_since": 1.9039180928220638,
+  "typical_since_june": 0.2,
+  "typical_prior": 0.1,
+  "easing": 78,
+  "national_rate": 4.7,
+  "national_year_ago": 4.4,
+  "cash_rate": 4.85,
+  "hikes_2026": 5,
+  "hit_of_10": 3,
+  "closer_than_last_year": true,
+  "generated": "Monday 9 November 2026, 9:42 AM AEDT",
+  "copy": {
+    "lede": "Unemployment is already higher than a year ago. From June to September the typical region rose 0.2 points, more than in any of the previous three years. By December the rate is expected to ease in 78 of 87 regions. Darwin is the place still expected to rise.",
+    "meaning": [
+      "The official unemployment rate is 4.7%, up from 4.4% a year ago. The cash rate target is 4.85% after five increases this year.",
+      "Sydney - Parramatta has seen the sharpest recent rise, up 1.9 points since June to 6.7%. 23 regions are up by half a point or more. In 2023, 2024 and 2025 the typical region moved by about 0.1 points or less over those same months.",
+      "The next three months usually bring some relief, and that is still the expectation almost everywhere. Darwin is the exception, with the rate expected to be about 0.2 points higher than the 3.0% recorded in September. When past outlooks named 10 regions, about 3 of them really were among the 10 that moved the most. Checked on past quarters, this outlook was closer to what happened than simply repeating last year's move."
+    ],
+    "actions": [
+      "Put extra help now into Sydney - Parramatta, Sydney - Outer West and Blue Mountains and Hunter Valley exc Newcastle. These are the regions where unemployment has already jumped since June.",
+      "Keep a close watch on Darwin. It is the region where the rate is still expected to be higher in December, even though it is low today.",
+      "In Moreton Bay - North and Wide Bay, do not assume the usual end-of-year improvement will clear a high rate. The easing looks smaller than last year.",
+      "Rates are already above 6% in Queensland - Outback, Sydney - Parramatta, Melbourne - West and Northern Territory - Outback. A softer December does not remove the need for support there now."
+    ],
+    "line_insight": "The official rate was 4.7% in September, from 4.4% a year earlier.",
+    "state_insight": "Victoria is the highest of these state figures. The Northern Territory and the ACT are not in this table.",
+    "bar_insight": "Points added to the unemployment rate from June to September 2026. This lift is larger than the same three months in recent years."
+  }
+}

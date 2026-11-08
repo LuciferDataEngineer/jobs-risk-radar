@@ -1,0 +1,9 @@
+{
+  "reference_rows": 1044,
+  "current_rows": 870,
+  "reference_years": "2020-2022",
+  "current_years": "2024-2026",
+  "columns": 21,
+  "drifted_columns": 20,
+  "report": "site/drift/index.html"
+}

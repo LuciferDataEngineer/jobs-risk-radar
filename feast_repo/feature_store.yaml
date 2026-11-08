@@ -1,0 +1,9 @@
+project: jobs_risk_radar
+provider: local
+registry: ../data/feast/registry.db
+online_store:
+  type: sqlite
+  path: ../data/feast/online.db
+offline_store:
+  type: duckdb
+entity_key_serialization_version: 2

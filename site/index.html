@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jobs Risk Radar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,680&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root {
+  --ink: #1c1915;
+  --muted: #5c564c;
+  --paper: #f4f0e6;
+  --card: #fffdf8;
+  --line: #e3d9c6;
+  --teal: #0e6b62;
+  --teal-dark: #0a4f49;
+  --high: #9f1239;
+  --watch: #c2410c;
+  --steady: #8a8175;
+  --easier: #0f766e;
+  --shadow: 0 10px 30px rgba(48, 36, 18, 0.06);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 400px at 90% -10%, #efe2c4 0%, transparent 55%),
+    var(--paper);
+  font-family: "Source Sans 3", "Segoe UI", sans-serif;
+  font-size: 18px;
+  line-height: 1.45;
+}
+header.banner {
+  padding: 28px 7vw 8px;
+}
+.kicker {
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--teal-dark);
+  margin: 0 0 8px;
+}
+h1 {
+  font-family: Fraunces, Georgia, serif;
+  font-weight: 680;
+  font-size: clamp(36px, 5vw, 58px);
+  line-height: 1.02;
+  margin: 0 0 10px;
+}
+.lede { max-width: 760px; font-size: 20px; margin: 0; }
+.when { color: var(--muted); font-size: 15px; margin-top: 8px; }
+nav.tabs {
+  display: flex;
+  gap: 8px;
+  padding: 18px 7vw 0;
+  overflow-x: auto;
+}
+nav.tabs button {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+nav.tabs button[aria-selected="true"] {
+  background: var(--ink);
+  color: #f7f1e4;
+}
+main { padding: 18px 7vw 48px; }
+section.panel { display: none; }
+section.panel.active { display: block; }
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin: 8px 0 18px;
+}
+.kpi {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 16px 12px;
+  box-shadow: var(--shadow);
+  min-height: 132px;
+}
+.kpi .value {
+  font-family: Fraunces, Georgia, serif;
+  font-size: 32px;
+  line-height: 1.05;
+  margin: 4px 0;
+}
+.kpi .label { font-size: 14px; font-weight: 700; color: var(--muted); }
+.kpi .note { font-size: 15px; }
+.kpi.high { border-top: 5px solid var(--high); }
+.kpi.watch { border-top: 5px solid var(--watch); }
+.kpi.steady { border-top: 5px solid var(--teal); }
+.layout { display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 16px; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 16px 16px 12px;
+  box-shadow: var(--shadow);
+}
+.card h2 {
+  font-family: Fraunces, Georgia, serif;
+  font-size: 26px;
+  margin: 0 0 4px;
+}
+.card p.insight { margin: 0 0 10px; color: var(--muted); }
+#map { height: 540px; border-radius: 14px; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 14px; margin-top: 8px; }
+.swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; }
+.meaning {
+  background: #12312e;
+  color: #f6f1e6;
+  border-radius: 18px;
+  padding: 18px 18px 8px;
+}
+.meaning h2 { font-family: Fraunces, Georgia, serif; margin: 0 0 8px; }
+.actions li { margin: 8px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 16px; }
+th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.pill { font-weight: 700; }
+.pill.high { color: var(--high); }
+.pill.watch { color: var(--watch); }
+.pill.steady { color: var(--steady); }
+.pill.easier { color: var(--easier); }
+input[type="search"] {
+  width: min(360px, 100%);
+  font: inherit;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  margin: 8px 0 12px;
+  background: #fff;
+}
+footer.sources {
+  margin-top: 22px;
+  color: var(--muted);
+  font-size: 14px;
+}
+footer.sources a { color: var(--teal-dark); }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  #map { height: 420px; }
+  body { font-size: 17px; }
+}
+</style>
+</head>
+<body>
+<header class="banner">
+  <p class="kicker">Australia · next three months</p>
+  <h1 id="title">Jobs Risk Radar</h1>
+  <p class="lede" id="lede"></p>
+  <p class="when" id="when"></p>
+</header>
+<nav class="tabs" role="tablist">
+  <button role="tab" id="tab-overview" aria-controls="overview" aria-selected="true">Overview</button>
+  <button role="tab" id="tab-map" aria-controls="map-panel" aria-selected="false">Regions map</button>
+  <button role="tab" id="tab-risk" aria-controls="risk" aria-selected="false">Who's at risk</button>
+  <button role="tab" id="tab-do" aria-controls="do" aria-selected="false">What to do</button>
+</nav>
+<main>
+  <section id="overview" class="panel active" role="tabpanel">
+    <div class="kpis" id="kpis"></div>
+    <div class="layout">
+      <article class="card">
+        <h2>Unemployment has already climbed</h2>
+        <p class="insight" id="line-insight"></p>
+        <canvas id="national" height="140"></canvas>
+      </article>
+      <article class="meaning" id="meaning"></article>
+    </div>
+  </section>
+  <section id="map-panel" class="panel" role="tabpanel">
+    <article class="card">
+      <h2>Where the rate is expected to rise, hold or ease by December</h2>
+      <p class="insight">Colour shows the outlook from September to December. Hover a region for the rate today and what the next three months look like.</p>
+      <div id="map"></div>
+      <div class="legend">
+        <span><i class="swatch" style="background:#9f1239"></i>Likely to rise</span>
+        <span><i class="swatch" style="background:#c2410c"></i>Little relief, or less than last year</span>
+        <span><i class="swatch" style="background:#d6d3c4"></i>Should ease</span>
+        <span><i class="swatch" style="background:#0f766e"></i>A clearer easing</span>
+      </div>
+      <p class="insight">Western Australia's two remote outback regions are drawn together, matching the published figures. Borders are simplified.</p>
+    </article>
+  </section>
+  <section id="risk" class="panel" role="tabpanel">
+    <div class="layout">
+      <article class="card">
+        <h2 id="bar-title">Where the jobless rate has already jumped</h2>
+        <p class="insight" id="bar-insight"></p>
+        <canvas id="bars" height="220"></canvas>
+      </article>
+      <article class="card">
+        <h2>The states, one year apart</h2>
+        <p class="insight" id="state-insight"></p>
+        <canvas id="states" height="220"></canvas>
+      </article>
+    </div>
+    <article class="card" style="margin-top:16px">
+      <h2>Every region</h2>
+      <input id="find" type="search" placeholder="Find a region or state" aria-label="Find a region">
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Region</th><th>Now</th><th>Since June</th><th>By December</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+  <section id="do" class="panel" role="tabpanel">
+    <article class="card">
+      <h2>What to do before Christmas</h2>
+      <ul class="actions" id="actions"></ul>
+    </article>
+  </section>
+  <footer class="sources">
+    <p>Sources: Australian Bureau of Statistics, Regional Labour Force, September 2026 (modelled regional rates) and Labour Force, Australia, September 2026 (official state and national rates); ABS Job Vacancies and Building Approvals; Reserve Bank of Australia cash rate target. Region boundaries from the ABS, simplified for this map. All ABS material is free to reuse with credit (CC BY 4.0). Prepared <span id="stamp"></span>. This is an independent briefing, not a government site. Rates are rounded to one decimal place.</p>
+  </footer>
+</main>
+<script id="radar" type="application/json">{"headlines":{"regions":87,"rising":1,"rising_name":"Darwin","rising_state":"Northern Territory","rising_rate":3.0023052082147794,"rising_change":0.15075072968898612,"already":23,"already_people":4002274,"sharp_name":"Sydney - Parramatta","sharp_state":"New South Wales","sharp_now":6.717825645967045,"sharp_since":1.9039180928220638,"typical_since_june":0.2,"typical_prior":0.1,"easing":78,"national_rate":4.7,"national_year_ago":4.4,"cash_rate":4.85,"hikes_2026":5,"hit_of_10":3,"closer_than_last_year":true,"generated":"Monday 9 November 2026, 9:42 AM AEDT","copy":{"lede":"Unemployment is already higher than a year ago. From June to September the typical region rose 0.2 points, more than in any of the previous three years. By December the rate is expected to ease in 78 of 87 regions. Darwin is the place still expected to rise.","meaning":["The official unemployment rate is 4.7%, up from 4.4% a year ago. The cash rate target is 4.85% after five increases this year.","Sydney - Parramatta has seen the sharpest recent rise, up 1.9 points since June to 6.7%. 23 regions are up by half a point or more. In 2023, 2024 and 2025 the typical region moved by about 0.1 points or less over those same months.","The next three months usually bring some relief, and that is still the expectation almost everywhere. Darwin is the exception, with the rate expected to be about 0.2 points higher than the 3.0% recorded in September. When past outlooks named 10 regions, about 3 of them really were among the 10 that moved the most. Checked on past quarters, this outlook was closer to what happened than simply repeating last year's move."],"actions":["Put extra help now into Sydney - Parramatta, Sydney - Outer West and Blue Mountains and Hunter Valley exc Newcastle. These are the regions where unemployment has already jumped since June.","Keep a close watch on Darwin. It is the region where the rate is still expected to be higher in December, even though it is low today.","In Moreton Bay - North and Wide Bay, do not assume the usual end-of-year improvement will clear a high rate. The easing looks smaller than last year.","Rates are already above 6% in Queensland - Outback, Sydney - Parramatta, Melbourne - West and Northern Territory - Outback. A softer December does not remove the need for support there now."],"line_insight":"The official rate was 4.7% in September, from 4.4% a year earlier.","state_insight":"Victoria is the highest of these state figures. The Northern Territory and the ACT are not in this table.","bar_insight":"Points added to the unemployment rate from June to September 2026. This lift is larger than the same three months in recent years."}},"regions":[{"code":"701","name":"Darwin","state":"Northern Territory","rate":3.0,"change":0.2,"since_june":-0.7,"outlook":"likely to rise","sure":"less sure","tone":"high","people":93824},{"code":"801","name":"Australian Capital Territory","state":"Australian Capital Territory","rate":4.7,"change":-0.7,"since_june":0.8,"outlook":"should ease, but by less than last year","sure":"less sure","tone":"watch","people":287140},{"code":"122","name":"Sydney - Northern Beaches","state":"New South Wales","rate":3.1,"change":-0.5,"since_june":0.6,"outlook":"should ease, but by less than last year","sure":"less sure","tone":"watch","people":158127},{"code":"102","name":"Central Coast","state":"New South Wales","rate":4.6,"change":-0.5,"since_june":0.5,"outlook":"should ease, but by less than last year","sure":"less sure","tone":"watch","people":180084},{"code":"319","name":"Wide Bay","state":"Queensland","rate":5.5,"change":-0.4,"since_june":0.3,"outlook":"should ease, but by less than last year","sure":"less sure","tone":"watch","people":155357},{"code":"504","name":"Perth - North East","state":"Western Australia","rate":4.1,"change":-0.2,"since_june":0.2,"outlook":"should ease, but by less than last year","sure":"less sure","tone":"watch","people":193257},{"code":"503","name":"Perth - Inner","state":"Western Australia","rate":3.0,"change":-0.1,"since_june":-0.0,"outlook":"looks steady, with less of a fall than last year","sure":"less sure","tone":"watch","people":131721},{"code":"507","name":"Perth - South West","state":"Western Australia","rate":4.6,"change":-0.2,"since_june":-0.1,"outlook":"should ease, but by less than last year","sure":"less sure","tone":"watch","people":306996},{"code":"405","name":"Barossa - Yorke - Mid North","state":"South Australia","rate":4.2,"change":-0.2,"since_june":-0.1,"outlook":"should ease, but by less than last year","sure":"less sure","tone":"watch","people":58841},{"code":"313","name":"Moreton Bay - North","state":"Queensland","rate":5.6,"change":-0.3,"since_june":-0.1,"outlook":"should ease, but by less than last year","sure":"less sure","tone":"watch","people":147046},{"code":"509","name":"Western Australia - Wheat Belt","state":"Western Australia","rate":3.1,"change":-0.1,"since_june":-0.2,"outlook":"should ease, but by less than last year","sure":"less sure","tone":"watch","people":80106},{"code":"407","name":"South Australia - South East","state":"South Australia","rate":3.6,"change":-0.1,"since_june":-0.2,"outlook":"should ease, but by less than last year","sure":"less sure","tone":"watch","people":101914},{"code":"401","name":"Adelaide - Central and Hills","state":"South Australia","rate":3.0,"change":-0.0,"since_june":-0.2,"outlook":"looks steady, with less of a fall than last year","sure":"less sure","tone":"watch","people":198812},{"code":"404","name":"Adelaide - West","state":"South Australia","rate":3.4,"change":-0.0,"since_june":-0.3,"outlook":"looks steady, with less of a fall than last year","sure":"less sure","tone":"watch","people":150865},{"code":"506","name":"Perth - South East","state":"Western Australia","rate":4.5,"change":-0.0,"since_june":-0.3,"outlook":"looks steady, with less of a fall than last year","sure":"less sure","tone":"watch","people":359822},{"code":"403","name":"Adelaide - South","state":"South Australia","rate":3.4,"change":0.0,"since_june":-0.3,"outlook":"looks steady, with less of a fall than last year","sure":"less sure","tone":"watch","people":221430},{"code":"402","name":"Adelaide - North","state":"South Australia","rate":5.4,"change":-0.0,"since_june":-0.3,"outlook":"looks steady, with less of a fall than last year","sure":"less sure","tone":"watch","people":259780},{"code":"406","name":"South Australia - Outback","state":"South Australia","rate":5.6,"change":-0.0,"since_june":-0.5,"outlook":"looks steady, with less of a fall than last year","sure":"less sure","tone":"watch","people":42109},{"code":"702","name":"Northern Territory - Outback","state":"Northern Territory","rate":6.5,"change":-0.1,"since_june":-0.6,"outlook":"looks steady","sure":"less sure","tone":"watch","people":57755},{"code":"107","name":"Illawarra","state":"New South Wales","rate":5.2,"change":-0.6,"since_june":1.1,"outlook":"should ease","sure":"fairly sure","tone":"steady","people":177657},{"code":"119","name":"Sydney - Inner South West","state":"New South Wales","rate":5.4,"change":-0.6,"since_june":1.0,"outlook":"should ease","sure":"fairly sure","tone":"steady","people":352043},{"code":"113","name":"Riverina","state":"New South Wales","rate":3.7,"change":-0.4,"since_june":0.7,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":86421},{"code":"115","name":"Sydney - Baulkham Hills and Hawkesbury","state":"New South Wales","rate":3.8,"change":-0.4,"since_june":0.7,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":171485},{"code":"128","name":"Sydney - Sutherland","state":"New South Wales","rate":2.6,"change":-0.4,"since_june":0.6,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":139064},{"code":"602","name":"Launceston and North East","state":"Tasmania","rate":5.0,"change":-0.4,"since_june":0.5,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":79788},{"code":"103","name":"New South Wales - Central West","state":"New South Wales","rate":4.0,"change":-0.4,"since_june":0.5,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":119448},{"code":"108","name":"Mid North Coast","state":"New South Wales","rate":4.3,"change":-0.4,"since_june":0.5,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":104893},{"code":"105","name":"Far West and Orana","state":"New South Wales","rate":4.2,"change":-0.3,"since_june":0.4,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":57966},{"code":"121","name":"Sydney - North Sydney and Hornsby","state":"New South Wales","rate":4.0,"change":-0.4,"since_june":0.4,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":255816},{"code":"110","name":"New England and North West","state":"New South Wales","rate":4.6,"change":-0.3,"since_june":0.4,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":104108},{"code":"210","name":"Melbourne - North West","state":"Victoria","rate":6.0,"change":-0.4,"since_june":0.4,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":254469},{"code":"118","name":"Sydney - Eastern Suburbs","state":"New South Wales","rate":2.7,"change":-0.3,"since_june":0.4,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":172076},{"code":"505","name":"Perth - North West","state":"Western Australia","rate":4.2,"change":-0.3,"since_june":0.4,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":394510},{"code":"207","name":"Melbourne - Inner East","state":"Victoria","rate":4.4,"change":-0.4,"since_june":0.4,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":233560},{"code":"101","name":"Capital Region","state":"New South Wales","rate":3.4,"change":-0.3,"since_june":0.3,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":129212},{"code":"109","name":"Murray","state":"New South Wales","rate":4.3,"change":-0.3,"since_june":0.3,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":69157},{"code":"123","name":"Sydney - Outer South West","state":"New South Wales","rate":4.9,"change":-0.4,"since_june":0.3,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":180256},{"code":"317","name":"Toowoomba","state":"Queensland","rate":4.2,"change":-0.4,"since_june":0.3,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":91940},{"code":"304","name":"Brisbane - West","state":"Queensland","rate":3.6,"change":-0.3,"since_june":0.3,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":116268},{"code":"601","name":"Hobart","state":"Tasmania","rate":5.2,"change":-0.3,"since_june":0.3,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":134487},{"code":"201","name":"Ballarat","state":"Victoria","rate":4.1,"change":-0.3,"since_june":0.3,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":95325},{"code":"305","name":"Brisbane Inner City","state":"Queensland","rate":3.6,"change":-0.3,"since_june":0.3,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":229581},{"code":"316","name":"Sunshine Coast","state":"Queensland","rate":3.2,"change":-0.3,"since_june":0.2,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":236091},{"code":"501","name":"Bunbury","state":"Western Australia","rate":3.4,"change":-0.3,"since_june":0.2,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":117704},{"code":"318","name":"Townsville","state":"Queensland","rate":5.2,"change":-0.4,"since_june":0.2,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":133148},{"code":"208","name":"Melbourne - Inner South","state":"Victoria","rate":4.0,"change":-0.3,"since_june":0.2,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":266611},{"code":"203","name":"Geelong","state":"Victoria","rate":3.9,"change":-0.3,"since_june":0.2,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":194397},{"code":"211","name":"Melbourne - Outer East","state":"Victoria","rate":4.1,"change":-0.2,"since_june":0.2,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":299319},{"code":"205","name":"Latrobe - Gippsland","state":"Victoria","rate":4.4,"change":-0.2,"since_june":0.2,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":154355},{"code":"214","name":"Mornington Peninsula","state":"Victoria","rate":4.5,"change":-0.3,"since_june":0.2,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":168949},{"code":"212","name":"Melbourne - South East","state":"Victoria","rate":6.3,"change":-0.4,"since_june":0.2,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":540620},{"code":"306","name":"Cairns","state":"Queensland","rate":4.8,"change":-0.3,"since_june":0.2,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":151342},{"code":"202","name":"Bendigo","state":"Victoria","rate":3.7,"change":-0.2,"since_june":0.1,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":89721},{"code":"216","name":"Shepparton","state":"Victoria","rate":4.0,"change":-0.2,"since_june":0.1,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":69350},{"code":"309","name":"Gold Coast","state":"Queensland","rate":3.5,"change":-0.3,"since_june":0.1,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":412322},{"code":"209","name":"Melbourne - North East","state":"Victoria","rate":4.7,"change":-0.3,"since_june":0.1,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":344644},{"code":"127","name":"Sydney - South West","state":"New South Wales","rate":5.8,"change":-0.3,"since_june":0.1,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":265718},{"code":"217","name":"Warrnambool and South West","state":"Victoria","rate":3.0,"change":-0.2,"since_june":0.0,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":67048},{"code":"302","name":"Brisbane - North","state":"Queensland","rate":3.2,"change":-0.2,"since_june":0.0,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":147874},{"code":"215","name":"Victoria - North West","state":"Victoria","rate":3.4,"change":-0.2,"since_june":-0.0,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":78580},{"code":"314","name":"Moreton Bay - South","state":"Queensland","rate":3.7,"change":-0.2,"since_june":-0.0,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":140280},{"code":"204","name":"Hume","state":"Victoria","rate":3.2,"change":-0.2,"since_june":-0.0,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":99552},{"code":"502","name":"Mandurah","state":"Western Australia","rate":5.1,"change":-0.2,"since_june":-0.0,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":60822},{"code":"307","name":"Darling Downs - Maranoa","state":"Queensland","rate":3.3,"change":-0.2,"since_june":-0.0,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":71600},{"code":"312","name":"Mackay - Isaac - Whitsunday","state":"Queensland","rate":3.1,"change":-0.3,"since_june":-0.0,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":114021},{"code":"308","name":"Central Queensland","state":"Queensland","rate":4.7,"change":-0.3,"since_june":-0.1,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":137187},{"code":"213","name":"Melbourne - West","state":"Victoria","rate":6.6,"change":-0.4,"since_june":-0.1,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":569054},{"code":"508","name":"Western Australia - Outback (North and South)","state":"Western Australia","rate":4.9,"change":-0.2,"since_june":-0.2,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":128713},{"code":"315","name":"Queensland - Outback","state":"Queensland","rate":6.8,"change":-0.4,"since_june":-0.2,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":42717},{"code":"206","name":"Melbourne - Inner","state":"Victoria","rate":4.8,"change":-0.2,"since_june":-0.2,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":490158},{"code":"301","name":"Brisbane - East","state":"Queensland","rate":3.5,"change":-0.1,"since_june":-0.4,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":149048},{"code":"311","name":"Logan - Beaudesert","state":"Queensland","rate":6.1,"change":-0.3,"since_june":-0.4,"outlook":"should ease, much like last year","sure":"less sure","tone":"steady","people":226373},{"code":"125","name":"Sydney - Parramatta","state":"New South Wales","rate":6.7,"change":-1.0,"since_june":1.9,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":300138},{"code":"124","name":"Sydney - Outer West and Blue Mountains","state":"New South Wales","rate":4.9,"change":-0.8,"since_june":1.5,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":198829},{"code":"106","name":"Hunter Valley exc Newcastle","state":"New South Wales","rate":5.2,"change":-0.7,"since_june":1.2,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":160271},{"code":"126","name":"Sydney - Ryde","state":"New South Wales","rate":4.5,"change":-0.6,"since_june":1.0,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":130707},{"code":"104","name":"Coffs Harbour - Grafton","state":"New South Wales","rate":5.0,"change":-0.5,"since_june":0.9,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":69183},{"code":"112","name":"Richmond - Tweed","state":"New South Wales","rate":4.1,"change":-0.5,"since_june":0.9,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":136278},{"code":"117","name":"Sydney - City and Inner South","state":"New South Wales","rate":4.9,"change":-0.6,"since_june":0.9,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":241872},{"code":"111","name":"Newcastle and Lake Macquarie","state":"New South Wales","rate":4.7,"change":-0.5,"since_june":0.8,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":231628},{"code":"604","name":"Tasmania - West and North West","state":"Tasmania","rate":5.2,"change":-0.5,"since_june":0.8,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":57404},{"code":"116","name":"Sydney - Blacktown","state":"New South Wales","rate":5.8,"change":-0.6,"since_june":0.8,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":261121},{"code":"120","name":"Sydney - Inner West","state":"New South Wales","rate":3.9,"change":-0.5,"since_june":0.7,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":195169},{"code":"603","name":"Tasmania - South East","state":"Tasmania","rate":4.9,"change":-0.5,"since_june":0.7,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":21005},{"code":"114","name":"Southern Highlands and Shoalhaven","state":"New South Wales","rate":4.2,"change":-0.5,"since_june":0.6,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":76250},{"code":"310","name":"Ipswich","state":"Queensland","rate":6.3,"change":-0.7,"since_june":0.5,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":226965},{"code":"303","name":"Brisbane - South","state":"Queensland","rate":4.4,"change":-0.5,"since_june":0.5,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":243729}],"national_series":[{"month":"2023-01","rate":3.66},{"month":"2023-02","rate":3.61},{"month":"2023-03","rate":3.6},{"month":"2023-04","rate":3.71},{"month":"2023-05","rate":3.6},{"month":"2023-06","rate":3.53},{"month":"2023-07","rate":3.73},{"month":"2023-08","rate":3.66},{"month":"2023-09","rate":3.55},{"month":"2023-10","rate":3.77},{"month":"2023-11","rate":3.93},{"month":"2023-12","rate":3.99},{"month":"2024-01","rate":4.09},{"month":"2024-02","rate":3.74},{"month":"2024-03","rate":3.91},{"month":"2024-04","rate":4.09},{"month":"2024-05","rate":4.02},{"month":"2024-06","rate":4.05},{"month":"2024-07","rate":4.21},{"month":"2024-08","rate":4.11},{"month":"2024-09","rate":4.01},{"month":"2024-10","rate":4.08},{"month":"2024-11","rate":3.93},{"month":"2024-12","rate":4.0},{"month":"2025-01","rate":4.13},{"month":"2025-02","rate":4.08},{"month":"2025-03","rate":4.08},{"month":"2025-04","rate":4.06},{"month":"2025-05","rate":4.11},{"month":"2025-06","rate":4.34},{"month":"2025-07","rate":4.26},{"month":"2025-08","rate":4.22},{"month":"2025-09","rate":4.43},{"month":"2025-10","rate":4.32},{"month":"2025-11","rate":4.31},{"month":"2025-12","rate":4.12},{"month":"2026-01","rate":4.08},{"month":"2026-02","rate":4.31},{"month":"2026-03","rate":4.29},{"month":"2026-04","rate":4.5},{"month":"2026-05","rate":4.39},{"month":"2026-06","rate":4.45},{"month":"2026-07","rate":4.49},{"month":"2026-08","rate":4.65},{"month":"2026-09","rate":4.72}],"states":[{"name":"New South Wales","now":4.7,"then":4.2},{"name":"Victoria","now":5.1,"then":4.7},{"name":"Queensland","now":4.5,"then":4.2},{"name":"South Australia","now":4.2,"then":4.5},{"name":"Western Australia","now":4.2,"then":4.3},{"name":"Tasmania","now":5.0,"then":4.4}],"already_chart":[{"code":"125","name":"Sydney - Parramatta","state":"New South Wales","rate":6.7,"change":-1.0,"since_june":1.9,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":300138},{"code":"124","name":"Sydney - Outer West and Blue Mountains","state":"New South Wales","rate":4.9,"change":-0.8,"since_june":1.5,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":198829},{"code":"106","name":"Hunter Valley exc Newcastle","state":"New South Wales","rate":5.2,"change":-0.7,"since_june":1.2,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":160271},{"code":"107","name":"Illawarra","state":"New South Wales","rate":5.2,"change":-0.6,"since_june":1.1,"outlook":"should ease","sure":"fairly sure","tone":"steady","people":177657},{"code":"119","name":"Sydney - Inner South West","state":"New South Wales","rate":5.4,"change":-0.6,"since_june":1.0,"outlook":"should ease","sure":"fairly sure","tone":"steady","people":352043},{"code":"126","name":"Sydney - Ryde","state":"New South Wales","rate":4.5,"change":-0.6,"since_june":1.0,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":130707},{"code":"104","name":"Coffs Harbour - Grafton","state":"New South Wales","rate":5.0,"change":-0.5,"since_june":0.9,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":69183},{"code":"112","name":"Richmond - Tweed","state":"New South Wales","rate":4.1,"change":-0.5,"since_june":0.9,"outlook":"should ease","sure":"fairly sure","tone":"easier","people":136278}]}</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const data = JSON.parse(document.getElementById("radar").textContent);
+const h = data.headlines;
+const toneColor = { high: "#9f1239", watch: "#c2410c", steady: "#d6d3c4", easier: "#0f766e" };
+
+document.getElementById("lede").textContent = h.copy.lede;
+document.getElementById("when").textContent = "Regional figures are for September 2026, the latest release. The outlook runs to December 2026. The cash rate target of " + h.cash_rate.toFixed(2) + "% is the rate in force now. A point means a percentage point of the unemployment rate. Updated " + h.generated + ".";
+document.getElementById("stamp").textContent = h.generated;
+document.getElementById("line-insight").textContent = h.copy.line_insight;
+document.getElementById("state-insight").textContent = h.copy.state_insight;
+document.getElementById("bar-insight").textContent = h.copy.bar_insight;
+
+const kpis = [
+  ["watch", h.national_rate.toFixed(1) + "%", "Unemployment in Australia", "up from " + h.national_year_ago.toFixed(1) + "% a year ago"],
+  ["high", "+" + h.typical_since_june.toFixed(1), "Typical rise since June", "points, versus about " + h.typical_prior.toFixed(1) + " or less in recent years"],
+  ["high", h.sharp_name, "Sharpest rise since June", "up " + h.sharp_since.toFixed(1) + " points to " + h.sharp_now.toFixed(1) + "%, in " + h.sharp_state],
+  ["watch", String(h.rising), "Regions still expected to rise", h.rising_name ? h.rising_name + " is the clear one" : "none stand out"],
+  ["steady", h.cash_rate.toFixed(2) + "%", "Cash rate target", "the " + ordinal(h.hikes_2026) + " increase this year, in force from 4 November"]
+];
+document.getElementById("kpis").innerHTML = kpis.map(([tone, value, label, note]) =>
+  `<article class="kpi ${tone}"><div class="label">${label}</div><div class="value">${value}</div><div class="note">${note}</div></article>`
+).join("");
+document.getElementById("meaning").innerHTML = "<h2>What this means</h2>" + h.copy.meaning.map((paragraph) => `<p>${paragraph}</p>`).join("");
+
+const tabs = document.querySelectorAll("nav.tabs button");
+tabs.forEach((button) => button.addEventListener("click", () => {
+  tabs.forEach((item) => item.setAttribute("aria-selected", item === button ? "true" : "false"));
+  document.querySelectorAll("section.panel").forEach((panel) => panel.classList.remove("active"));
+  document.getElementById(button.getAttribute("aria-controls")).classList.add("active");
+  if (button.id === "tab-map") map.invalidateSize();
+}));
+
+Chart.register(ChartDataLabels);
+Chart.defaults.font.family = '"Source Sans 3", sans-serif';
+Chart.defaults.color = "#1c1915";
+const labelLast = {
+  id: "labelLast",
+  afterDatasetsDraw(chart) {
+    const points = chart.getDatasetMeta(0).data;
+    const last = points[points.length - 1];
+    const value = chart.data.datasets[0].data.at(-1);
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.font = "700 14px Source Sans 3";
+    ctx.fillStyle = "#0e6b62";
+    ctx.fillText(value.toFixed(1) + "%", last.x - 36, last.y - 10);
+    ctx.restore();
+  }
+};
+new Chart(document.getElementById("national"), {
+  type: "line",
+  data: {
+    labels: data.national_series.map((d) => d.month),
+    datasets: [{
+      data: data.national_series.map((d) => d.rate),
+      borderColor: "#0e6b62",
+      backgroundColor: "rgba(14,107,98,0.12)",
+      fill: true,
+      tension: 0.25,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      borderWidth: 2.5
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: (c) => c.parsed.y.toFixed(1) + "%" } } },
+    scales: { x: { ticks: { maxTicksLimit: 6 } }, y: { ticks: { callback: (v) => v.toFixed(1) + "%" } } }
+  },
+  plugins: [labelLast]
+});
+new Chart(document.getElementById("bars"), {
+  type: "bar",
+  data: {
+    labels: data.already_chart.map((d) => d.name),
+    datasets: [{ data: data.already_chart.map((d) => d.since_june), backgroundColor: "#c2410c", borderRadius: 6 }]
+  },
+  options: {
+    indexAxis: "y",
+    plugins: { legend: { display: false }, datalabels: { anchor: "end", align: "end", formatter: (v) => (v > 0 ? "+" : "") + v.toFixed(1) } },
+    scales: { x: { ticks: { callback: (v) => v.toFixed(1) } } },
+    layout: { padding: { right: 36 } }
+  }
+});
+new Chart(document.getElementById("states"), {
+  type: "bar",
+  data: {
+    labels: data.states.map((d) => d.name.replace("New South Wales", "NSW").replace("South Australia", "SA").replace("Western Australia", "WA")),
+    datasets: [
+      { label: "Sep 2025", data: data.states.map((d) => d.then), backgroundColor: "#e7d7b8" },
+      { label: "Sep 2026", data: data.states.map((d) => d.now), backgroundColor: "#0e6b62" }
+    ]
+  },
+  options: {
+    plugins: { datalabels: { display: false } },
+    scales: { y: { ticks: { callback: (v) => v.toFixed(1) + "%" } } }
+  }
+});
+
+function renderRows(query) {
+  const needle = query.trim().toLowerCase();
+  const list = data.regions.filter((row) => !needle || (row.name + " " + row.state).toLowerCase().includes(needle));
+  document.getElementById("rows").innerHTML = list.map((row) => `<tr>
+    <td><strong>${row.name}</strong><br><span style="color:#5c564c">${row.state}</span></td>
+    <td>${row.rate.toFixed(1)}%</td>
+    <td>${signed(row.since_june)} points</td>
+    <td><span class="pill ${row.tone}">${row.outlook}</span><br>${signed(row.change)} points, ${row.sure}</td>
+  </tr>`).join("");
+}
+document.getElementById("find").addEventListener("input", (event) => renderRows(event.target.value));
+renderRows("");
+
+document.getElementById("actions").innerHTML = h.copy.actions.map((item) => `<li>${item}</li>`).join("");
+
+function signed(value) {
+  return (value > 0 ? "+" : "") + value.toFixed(1);
+}
+function ordinal(n) {
+  const words = ["zero", "first", "second", "third", "fourth", "fifth", "sixth"];
+  return words[n] || String(n);
+}
+
+const map = L.map("map", { scrollWheelZoom: false });
+L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+  attribution: "&copy; OpenStreetMap &copy; CARTO",
+  subdomains: "abcd",
+  maxZoom: 12
+}).addTo(map);
+const byCode = Object.fromEntries(data.regions.map((row) => [row.code, row]));
+fetch("sa4.geojson").then((response) => response.json()).then((geo) => {
+  const layer = L.geoJSON(geo, {
+    style: (feature) => {
+      const row = byCode[feature.properties.radar_code];
+      return {
+        color: "#ffffff",
+        weight: 0.6,
+        fillColor: row ? toneColor[row.tone] : "#eee",
+        fillOpacity: 0.88
+      };
+    },
+    onEachFeature: (feature, layer) => {
+      const row = byCode[feature.properties.radar_code];
+      if (!row) return;
+      layer.bindTooltip(`<strong>${row.name}</strong><br>${row.rate.toFixed(1)}% now, ${signed(row.since_june)} since June<br>${row.outlook} (${row.sure})`);
+    }
+  }).addTo(map);
+  map.fitBounds(layer.getBounds(), { padding: [12, 12] });
+});
+</script>
+</body>
+</html>

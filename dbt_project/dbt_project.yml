@@ -1,0 +1,12 @@
+name: jrr
+version: "1.0.0"
+config-version: 2
+profile: jrr
+model-paths: ["models"]
+test-paths: ["tests"]
+models:
+  jrr:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table

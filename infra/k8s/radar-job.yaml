@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: radar-score
+  labels:
+    app: jobs-risk-radar
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app: jobs-risk-radar
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: score
+          image: jobs-risk-radar:local
+          imagePullPolicy: Never
+          resources:
+            requests:
+              cpu: "250m"
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 2Gi
