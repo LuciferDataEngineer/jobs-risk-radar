@@ -77,7 +77,7 @@ MetricFlow saved queries and Great Expectations Data Docs were the centre of pro
 | Orchestration | Dagster assets | The stage graph is importable in CI. The pipeline function is what CI executes |
 | Containers | Docker, kind, a Kubernetes Job | CI builds the image, loads it into kind, and waits for the Job |
 | Infrastructure | Terraform, `kreuzwerker/docker` 3.0.2 | Declares the local Docker network and the image build. CI validates. It does not apply, so it does not fight the kind job |
-| Stakeholder site | Static HTML, Leaflet, Chart.js | Four tabs, no build step, deployed by GitHub Pages |
+| Stakeholder site | Static HTML, inline region map, Chart.js | Four tabs, no build step, no map API key, deployed by GitHub Pages |
 | Quality gate | pytest, ruff, dbt tests, snapshot checks | CI fails if the national rate, the cash-rate target, or the region count drifts |
 
 Everything is open source. Nothing in the pipeline calls a paid API or a cloud warehouse.
@@ -233,7 +233,7 @@ Three GitHub Actions workflows:
 - **Kind** builds the image, starts a kind cluster, loads the image, applies `infra/k8s/radar-job.yaml`, and requires `RADAR_OK` in the Job log.
 - **Pages** deploys the `site/` directory on pushes to `main`. The stakeholder pages are at the site root. The drift report is at `/drift/`.
 
-pytest covers the snapshot reconciliation (87 regions, the September employment total, the 4.85% target), the point-in-time label for one region, the Dagster asset names, and a ban on technical jargon in `site/index.html`.
+pytest covers the snapshot reconciliation (87 regions, the September employment total, the 4.85% target), the point-in-time label for one region, the Dagster asset names, and a ban on technical jargon in `site/index.html`. The regions-map test checks that every SA4 is drawn from the local boundary file, in the colour for its outlook, without a tile service or an API key.
 
 ## Limitations and next steps
 
@@ -245,7 +245,7 @@ pytest covers the snapshot reconciliation (87 regions, the September employment 
 - About 3 of the 10 regions ranked as the biggest moves were actually in the top 10. That is better than chance and not good enough to treat the ordering as a promise. The site says so.
 - The live score uses September labour data and the November cash rate. Trees trained through June 2026 have not seen a 4.85% target, so the rate level mostly sits at the edge of what they have learned. The regional pattern comes mainly from each region's own recent rates.
 - Twenty of twenty-one feature columns shifted between the earlier and later scored windows. The model is being asked to work in a labour market that does not look like 2020–2022.
-- Coastlines in the map are simplified, and the two Western Australian outback regions are drawn as one shape.
+- Coastlines in the map are simplified, and the two Western Australian outback regions are drawn as one shape. The map is drawn from that local boundary file. It does not call a basemap tile service.
 
 ## Licence
 

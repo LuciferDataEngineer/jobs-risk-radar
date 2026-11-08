@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import polars as pl
 
+from jrr.choropleth import region_svg
 from jrr.paths import boundary_path, report_dir, site_dir, snapshot_dir
 
 MELBOURNE = ZoneInfo("Australia/Melbourne")
@@ -290,7 +291,8 @@ def _hikes_2026() -> int:
 
 def _page(payload: dict) -> str:
     data = json.dumps(payload, separators=(",", ":")).replace("<", "\\u003c")
-    return PAGE.replace("/*__DATA__*/null", data)
+    svg = region_svg(payload["regions"])
+    return PAGE.replace("/*__DATA__*/null", data).replace("<!--__MAP__-->", svg)
 
 
 PAGE = r"""<!DOCTYPE html>
@@ -301,7 +303,6 @@ PAGE = r"""<!DOCTYPE html>
 <title>Jobs Risk Radar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,680&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root {
   --ink: #1c1915;
@@ -410,7 +411,60 @@ section.panel.active { display: block; }
   margin: 0 0 4px;
 }
 .card p.insight { margin: 0 0 10px; color: var(--muted); }
-#map { height: 540px; border-radius: 14px; }
+#map {
+  position: relative;
+  height: 540px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #8fabc0;
+  touch-action: none;
+}
+#map svg { width: 100%; height: 100%; display: block; cursor: grab; }
+#map svg:active { cursor: grabbing; }
+#map path {
+  stroke: #fffdf8;
+  stroke-width: 1.15;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+#map path:hover, #map path:focus { stroke: #1c1915; stroke-width: 2.25; outline: none; }
+.map-controls {
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(28, 25, 21, 0.28);
+}
+.map-controls button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: #fffdf8;
+  color: var(--ink);
+  font: 700 20px/1 "Source Sans 3", sans-serif;
+  cursor: pointer;
+}
+.map-controls button:last-child { border-bottom: 0; }
+.map-controls button:hover, .map-controls button:focus { background: #f4f0e6; }
+.map-tip {
+  position: absolute;
+  z-index: 3;
+  margin: 0;
+  max-width: 240px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fffdf8;
+  box-shadow: var(--shadow);
+  font-size: 15px;
+  line-height: 1.35;
+  pointer-events: none;
+}
 .legend { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 14px; margin-top: 8px; }
 .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; }
 .meaning {
@@ -479,8 +533,15 @@ footer.sources a { color: var(--teal-dark); }
   <section id="map-panel" class="panel" role="tabpanel">
     <article class="card">
       <h2>Where the rate is expected to rise, hold or ease by December</h2>
-      <p class="insight">Colour shows the outlook from September to December. Hover a region for the rate today and what the next three months look like.</p>
-      <div id="map"></div>
+      <p class="insight">Colour shows the outlook from September to December. Hover or tap a region for the rate today and what the next three months look like.</p>
+      <div id="map">
+        <!--__MAP__-->
+        <div class="map-controls">
+          <button type="button" id="map-zoom-in" aria-label="Zoom in">+</button>
+          <button type="button" id="map-zoom-out" aria-label="Zoom out">−</button>
+        </div>
+        <p id="map-tip" class="map-tip" hidden></p>
+      </div>
       <div class="legend">
         <span><i class="swatch" style="background:#9f1239"></i>Likely to rise</span>
         <span><i class="swatch" style="background:#c2410c"></i>Little relief, or less than last year</span>
@@ -529,11 +590,9 @@ footer.sources a { color: var(--teal-dark); }
 <script id="radar" type="application/json">/*__DATA__*/null</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const data = JSON.parse(document.getElementById("radar").textContent);
 const h = data.headlines;
-const toneColor = { high: "#9f1239", watch: "#c2410c", steady: "#d6d3c4", easier: "#0f766e" };
 
 document.getElementById("lede").textContent = h.copy.lede;
 document.getElementById("when").textContent = "Regional figures are for September 2026, the latest release. The outlook runs to December 2026. The cash rate target of " + h.cash_rate.toFixed(2) + "% is the rate in force now. A point means a percentage point of the unemployment rate. Updated " + h.generated + ".";
@@ -559,7 +618,13 @@ tabs.forEach((button) => button.addEventListener("click", () => {
   tabs.forEach((item) => item.setAttribute("aria-selected", item === button ? "true" : "false"));
   document.querySelectorAll("section.panel").forEach((panel) => panel.classList.remove("active"));
   document.getElementById(button.getAttribute("aria-controls")).classList.add("active");
-  if (button.id === "tab-map") map.invalidateSize();
+  // A chart drawn while its tab is hidden is measured as 0. Measure it again once the tab is on screen.
+  requestAnimationFrame(() => {
+    document.querySelectorAll("canvas").forEach((canvas) => {
+      const chart = Chart.getChart(canvas);
+      if (chart) chart.resize();
+    });
+  });
 }));
 
 Chart.register(ChartDataLabels);
@@ -651,32 +716,134 @@ function ordinal(n) {
   return words[n] || String(n);
 }
 
-const map = L.map("map", { scrollWheelZoom: false });
-L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-  attribution: "&copy; OpenStreetMap &copy; CARTO",
-  subdomains: "abcd",
-  maxZoom: 12
-}).addTo(map);
-const byCode = Object.fromEntries(data.regions.map((row) => [row.code, row]));
-fetch("sa4.geojson").then((response) => response.json()).then((geo) => {
-  const layer = L.geoJSON(geo, {
-    style: (feature) => {
-      const row = byCode[feature.properties.radar_code];
-      return {
-        color: "#ffffff",
-        weight: 0.6,
-        fillColor: row ? toneColor[row.tone] : "#eee",
-        fillOpacity: 0.88
-      };
-    },
-    onEachFeature: (feature, layer) => {
-      const row = byCode[feature.properties.radar_code];
-      if (!row) return;
-      layer.bindTooltip(`<strong>${row.name}</strong><br>${row.rate.toFixed(1)}% now, ${signed(row.since_june)} since June<br>${row.outlook} (${row.sure})`);
-    }
-  }).addTo(map);
-  map.fitBounds(layer.getBounds(), { padding: [12, 12] });
+const byCode = Object.fromEntries(data.regions.map((row) => [String(row.code), row]));
+const regionMap = document.getElementById("map");
+const regionSvg = regionMap.querySelector("svg");
+const tip = document.getElementById("map-tip");
+const homeBox = regionSvg.viewBox.baseVal;
+const home = { x: homeBox.x, y: homeBox.y, w: homeBox.width, h: homeBox.height };
+let view = { x: home.x, y: home.y, w: home.w, h: home.h };
+let pinned = null;
+let drag = null;
+
+function applyView() {
+  regionSvg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
+}
+function clampView(next) {
+  const minW = home.w / 14;
+  let w = Math.min(home.w, Math.max(minW, next.w));
+  let h = home.h * (w / home.w);
+  if (w >= home.w * 0.999) return { x: home.x, y: home.y, w: home.w, h: home.h };
+  const marginX = w * 0.25;
+  const marginY = h * 0.25;
+  const x = Math.min(home.x + home.w - marginX, Math.max(home.x - w + marginX, next.x));
+  const y = Math.min(home.y + home.h - marginY, Math.max(home.y - h + marginY, next.y));
+  return { x: x, y: y, w: w, h: h };
+}
+function zoomBy(factor) {
+  const cx = view.x + view.w / 2;
+  const cy = view.y + view.h / 2;
+  const w = view.w * factor;
+  const h = view.h * factor;
+  view = clampView({ x: cx - w / 2, y: cy - h / 2, w: w, h: h });
+  applyView();
+  hideTip();
+}
+document.getElementById("map-zoom-in").addEventListener("click", () => zoomBy(0.72));
+document.getElementById("map-zoom-out").addEventListener("click", () => zoomBy(1 / 0.72));
+
+function tipHtml(row) {
+  return "<strong>" + esc(row.name) + "</strong><br>" +
+    row.rate.toFixed(1) + "% now, " + signed(row.since_june) + " since June<br>" +
+    esc(row.outlook) + " (" + esc(row.sure) + ")";
+}
+function showTip(path, event) {
+  const row = byCode[path.getAttribute("data-code")];
+  if (!row) return;
+  tip.hidden = false;
+  tip.innerHTML = tipHtml(row);
+  const box = regionMap.getBoundingClientRect();
+  let x = event.clientX - box.left + 14;
+  let y = event.clientY - box.top + 14;
+  tip.style.left = x + "px";
+  tip.style.top = y + "px";
+  const tw = tip.offsetWidth;
+  const th = tip.offsetHeight;
+  if (x + tw > box.width - 8) tip.style.left = Math.max(8, event.clientX - box.left - tw - 14) + "px";
+  if (y + th > box.height - 8) tip.style.top = Math.max(8, event.clientY - box.top - th - 14) + "px";
+}
+function hideTip() {
+  tip.hidden = true;
+  pinned = null;
+}
+regionSvg.addEventListener("pointerover", (event) => {
+  const path = event.target.closest && event.target.closest("path[data-code]");
+  if (!path || pinned) return;
+  showTip(path, event);
 });
+regionSvg.addEventListener("pointermove", (event) => {
+  if (drag && event.pointerId === drag.id) {
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx, dy) < 5) return;
+    drag.moved = true;
+    const rect = regionSvg.getBoundingClientRect();
+    view = clampView({
+      x: drag.view.x - dx / rect.width * drag.view.w,
+      y: drag.view.y - dy / rect.height * drag.view.h,
+      w: drag.view.w,
+      h: drag.view.h
+    });
+    applyView();
+    hideTip();
+    return;
+  }
+  if (pinned) return;
+  const path = event.target.closest && event.target.closest("path[data-code]");
+  if (path) showTip(path, event);
+});
+regionSvg.addEventListener("pointerout", (event) => {
+  if (pinned || drag) return;
+  const path = event.target.closest && event.target.closest("path[data-code]");
+  const next = event.relatedTarget && event.relatedTarget.closest && event.relatedTarget.closest("path[data-code]");
+  if (path && path !== next) hideTip();
+});
+regionSvg.addEventListener("pointerdown", (event) => {
+  if (event.button !== undefined && event.button !== 0) return;
+  drag = {
+    id: event.pointerId,
+    x: event.clientX,
+    y: event.clientY,
+    view: { x: view.x, y: view.y, w: view.w, h: view.h },
+    moved: false,
+    target: event.target.closest && event.target.closest("path[data-code]")
+  };
+  regionSvg.setPointerCapture(event.pointerId);
+});
+regionSvg.addEventListener("pointerup", (event) => {
+  if (!drag || event.pointerId !== drag.id) return;
+  const path = drag.target;
+  const moved = drag.moved;
+  const touch = event.pointerType === "touch";
+  drag = null;
+  if (moved || !touch) return;
+  if (!path || pinned === path) hideTip();
+  else { pinned = path; showTip(path, event); }
+});
+regionSvg.addEventListener("pointercancel", () => { drag = null; });
+regionSvg.addEventListener("focusin", (event) => {
+  const path = event.target.closest && event.target.closest("path[data-code]");
+  if (!path) return;
+  const rect = path.getBoundingClientRect();
+  showTip(path, { clientX: rect.left + rect.width / 2, clientY: rect.top + 12 });
+});
+regionSvg.addEventListener("focusout", (event) => {
+  const next = event.relatedTarget && event.relatedTarget.closest && event.relatedTarget.closest("path[data-code]");
+  if (!next) hideTip();
+});
+function esc(value) {
+  return String(value).replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]));
+}
 </script>
 </body>
 </html>
