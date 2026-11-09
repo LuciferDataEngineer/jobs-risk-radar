@@ -6,7 +6,7 @@ On 3 November 2026 the Reserve Bank's Monetary Policy Board raised the cash rate
 
 That national path does not say where the pressure shows up first. This project is an early-warning radar for the 87 ABS labour-market regions (SA4s, with Western Australia's two outback regions combined the way the ABS publishes them) and for the states. It is built so a state government, an employment-service provider, or a job seeker can see where the rate has already jumped, and where the next three months look different from the usual end-of-year pattern.
 
-The stakeholder briefing is a static site, not a technical console:
+The stakeholder briefing is a static site, not a technical console. The pages are a dark dashboard: a slim title bar with the Melbourne update time and a link to this repository, underline tabs, large figures on rounded cards, and charts that open to the exact values. A state filter narrows the map and the region list. The figures are unchanged.
 
 **https://luciferdataengineer.github.io/jobs-risk-radar/**
 
@@ -77,7 +77,7 @@ MetricFlow saved queries and Great Expectations Data Docs were the centre of pro
 | Orchestration | Dagster assets | The stage graph is importable in CI. The pipeline function is what CI executes |
 | Containers | Docker, kind, a Kubernetes Job | CI builds the image, loads it into kind, and waits for the Job |
 | Infrastructure | Terraform, `kreuzwerker/docker` 3.0.2 | Declares the local Docker network and the image build. CI validates. It does not apply, so it does not fight the kind job |
-| Stakeholder site | Static HTML, inline region map, Chart.js | Four tabs, no build step, no map API key, deployed by GitHub Pages |
+| Stakeholder site | Static HTML, inline region map, Chart.js | Dark dashboard, four tabs, no build step, no map API key, deployed by GitHub Pages |
 | Quality gate | pytest, ruff, dbt tests, snapshot checks | CI fails if the national rate, the cash-rate target, or the region count drifts |
 
 Everything is open source. Nothing in the pipeline calls a paid API or a cloud warehouse.

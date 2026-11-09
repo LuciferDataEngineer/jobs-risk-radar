@@ -14,13 +14,16 @@ from collections.abc import Iterable, Mapping
 
 from jrr.paths import boundary_path
 
+# Status colours for the dark briefing. High, watch and easier are bright enough
+# to read as text and as map fills on a near-black page. Steady stays a light
+# neutral. These values are the legend; changing them changes the briefing.
 TONE_COLOURS = {
-    "high": "#9f1239",
-    "watch": "#c2410c",
+    "high": "#fb7185",
+    "watch": "#fb923c",
     "steady": "#d6d3c4",
-    "easier": "#0f766e",
+    "easier": "#2dd4bf",
 }
-NEUTRAL = "#e7e1d6"
+NEUTRAL = "#a1a1aa"
 _SPAN = 1000.0
 
 

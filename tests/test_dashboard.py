@@ -31,6 +31,12 @@ def test_pages_are_plain_language():
     for label in ["Overview", "Regions map", "Who's at risk", "What to do"]:
         assert label in Path(root() / "site" / "index.html").read_text(encoding="utf-8")
     assert "australia/melbourne" in page or "aedt" in page or "aest" in page
+    assert "exact chart values" in page
+    assert "state-filter" in page
+    assert "all states" in page
+    assert "https://github.com/luciferdataengineer/jobs-risk-radar" in page
+    assert "chart.resize()" in page
+    assert "#0c0c0e" in page
     assert (root() / "site" / "drift" / "index.html").exists()
     assert (root() / "site" / "sa4.geojson").exists()
 

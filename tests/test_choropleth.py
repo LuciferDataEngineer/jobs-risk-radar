@@ -6,12 +6,14 @@ from pathlib import Path
 from jrr.choropleth import NEUTRAL, TONE_COLOURS, region_svg
 from jrr.paths import boundary_path, root
 
-# The published legend. A change here is a change to the briefing, not a repaint.
+# Status colours on the dark briefing. High, watch and easier are bright enough
+# to read on a near-black page; steady stays a light neutral. A change here is
+# a change to the briefing, not a casual repaint.
 LEGEND = {
-    "high": "#9f1239",
-    "watch": "#c2410c",
+    "high": "#fb7185",
+    "watch": "#fb923c",
     "steady": "#d6d3c4",
-    "easier": "#0f766e",
+    "easier": "#2dd4bf",
 }
 TILE_MARKERS = (
     "basemaps.cartocdn.com",
